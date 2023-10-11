@@ -1,0 +1,79 @@
+/*
+ * test3.c
+ *
+ * Created: 20.09.2023 22:15:18
+ * Author : stnikan
+ */ 
+#include <avr/io.h>
+#define F_CPU 11059200
+#include <util/delay.h>
+#include <avr/interrupt.h>   //äëÿ èñïîëüçîâàíèÿ ïðåðûâàíèé
+
+int16_t v_max = 6000;
+int16_t v = 6000;
+int16_t dv = 0;
+uint16_t k = 12000; // êîýô äëÿ ïåðåâîäà ñêîðîñòè äâèãàòåëÿ âî âðåìÿ ïåðåêëþ÷åíèÿ îáìîòîê
+uint8_t i = 0;
+uint32_t my_time = 0;
+uint8_t sec = 0;
+uint16_t ms = 0;
+uint8_t my_phase[] = {0b00000011, 0b00000110, 0b00001100, 0b00001001} ;
+
+void timer_ini(void)
+{
+	//íàì áîëüøå íå íóæåí äåëåé, èñïîëüçóåì äëÿ èçìåíåíèÿ ðàáîòàþùåé îáìîòêè
+	ETIMSK = (1<<TOIE3);
+	TCCR3B = (1<<CS32); //èñïîëüçóåì äåëèòåëü ÷àñòîòû
+	TCNT3 = 65492; //ñðàáàòûâàåò êàæäûå 23 ìêñ
+	
+}
+
+
+//———————————————
+ISR (TIMER3_OVF_vect) //ôóíêöèÿ ïî òàéìåðó 3, êðóòèò äâèãàòåëü ñ îïðåäåë¸ííîé çàäåðæêîé
+{
+	TCNT3 = 65492; //ïðîøëà ìñ
+	ms++;
+	my_time ++;
+	uint32_t time_sr = k/v; //
+	if (my_time  >= time_sr){
+		my_time = 0;
+		if (v>0){i=(i+1)%4;}
+		else {i = (i+3)%4;}
+	PORTC = my_phase[i];
+	}
+	
+	if (ms > 1000){
+		sec= (sec+1)%12;
+		ms = ms%1000;
+	}
+	
+	if (sec == 6 )
+	{
+		v =-v;
+	}
+	
+	//if (sec>6 && sec < 10){dv = 0;}
+	//else if (sec>2 && sec<6){dv = -1;}
+	//else {dv = 1;}
+	//v += dv*3;
+	
+	
+	
+	
+	
+}
+
+
+int main(void)
+{
+    /* Replace with your application code */
+	DDRC = 0x0F;
+	timer_ini();
+	sei();
+	
+    while (1)
+    {	
+		
+    }
+}
